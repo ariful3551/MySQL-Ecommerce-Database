@@ -11,6 +11,8 @@ DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS customers;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS payments;
 
 
 -- -----------------------------------------------------
@@ -60,4 +62,34 @@ CREATE TABLE orders (
   order_date   DATETIME DEFAULT CURRENT_TIMESTAMP,
   status       ENUM('pending','shipped','delivered','cancelled') NOT NULL DEFAULT 'pending',
   FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+);
+
+
+-- -----------------------------------------------------
+-- Table: order_items (junction table: orders <-> products)
+-- unit_price stores the price at purchase time, so later
+-- price changes do not alter old orders
+-- -----------------------------------------------------
+CREATE TABLE order_items (
+  order_item_id  INT AUTO_INCREMENT PRIMARY KEY,
+  order_id       INT NOT NULL,
+  product_id     INT NOT NULL,
+  quantity       INT NOT NULL CHECK (quantity > 0),
+  unit_price     DECIMAL(10,2) NOT NULL,
+  FOREIGN KEY (order_id)   REFERENCES orders(order_id),
+  FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+
+-- -----------------------------------------------------
+-- Table: payments
+-- -----------------------------------------------------
+CREATE TABLE payments (
+  payment_id      INT AUTO_INCREMENT PRIMARY KEY,
+  order_id        INT NOT NULL,
+  payment_method  ENUM('card','bkash','cash_on_delivery') NOT NULL,
+  amount          DECIMAL(10,2) NOT NULL,
+  payment_status  ENUM('paid','pending','failed') NOT NULL DEFAULT 'pending',
+  payment_date    DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(order_id)
 );
